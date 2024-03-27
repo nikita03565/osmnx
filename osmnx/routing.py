@@ -10,6 +10,7 @@ import numpy as np
 import pandas as pd
 
 from . import convert
+from . import settings
 from . import utils
 
 
@@ -375,9 +376,11 @@ def _clean_maxspeed(maxspeed, agg=np.mean, convert_mph=True):
     Clean a maxspeed string and convert mph to kph if necessary.
 
     If present, splits maxspeed on "|" (which denotes that the value contains
-    different speeds per lane) then aggregates the resulting values. Invalid
-    inputs return None. See https://wiki.openstreetmap.org/wiki/Key:maxspeed
-    for details on values and formats.
+    different speeds per lane) then aggregates the resulting values. If given
+    string is not a valid numeric string, tries to look up its value in
+    implicit maxspeed values mapping. Invalid inputs return None. See
+    https://wiki.openstreetmap.org/wiki/Key:maxspeed for details on values and
+    formats.
 
     Parameters
     ----------
@@ -391,7 +394,7 @@ def _clean_maxspeed(maxspeed, agg=np.mean, convert_mph=True):
 
     Returns
     -------
-    clean_value : string
+    clean_value : float
     """
     MILES_TO_KM = 1.60934
     # regex adapted from OSM wiki
@@ -408,8 +411,8 @@ def _clean_maxspeed(maxspeed, agg=np.mean, convert_mph=True):
         return agg(clean_values)
 
     except (ValueError, AttributeError):
-        # if invalid input, return None
-        return None
+        # if input is not a valid numeric string, look it up in implicit speed mapping
+        return settings.implicit_maxspeed_values.get(maxspeed)
 
 
 def _collapse_multiple_maxspeed_values(value, agg):
